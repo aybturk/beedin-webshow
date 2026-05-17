@@ -345,7 +345,7 @@ export default function HeroSection({ section, branding, storeSlug, heroProduct 
         <div
           style={{
             background: "var(--color-text)",
-            padding: "48px 0",
+            padding: "56px 0 60px",
             textAlign: "center",
           }}
         >
@@ -354,11 +354,11 @@ export default function HeroSection({ section, branding, storeSlug, heroProduct 
               <p
                 style={{
                   fontFamily: "var(--font-heading)",
-                  fontSize: 14,
+                  fontSize: 13,
                   fontStyle: "italic",
-                  color: "rgba(255,255,255,0.6)",
-                  marginBottom: 16,
-                  letterSpacing: "0.04em",
+                  color: "rgba(255,255,255,0.5)",
+                  marginBottom: 20,
+                  letterSpacing: "0.06em",
                 }}
               >
                 {branding.tagline}
@@ -370,7 +370,7 @@ export default function HeroSection({ section, branding, storeSlug, heroProduct 
                 fontSize: "clamp(36px, 5vw, 68px)",
                 fontWeight: 300,
                 color: "white",
-                marginBottom: 28,
+                marginBottom: section.subheadline ? 16 : 36,
                 lineHeight: 1.05,
                 letterSpacing: "-0.02em",
                 maxWidth: 700,
@@ -378,25 +378,58 @@ export default function HeroSection({ section, branding, storeSlug, heroProduct 
             >
               {section.headline}
             </h1>
-            <Link
-              href={ctaHref}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "white",
-                textDecoration: "none",
-                borderBottom: "1px solid rgba(255,255,255,0.4)",
-                paddingBottom: 2,
-              }}
-            >
-              {section.cta_label || "Explore"} →
-            </Link>
+            {section.subheadline && (
+              <p
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 15,
+                  color: "rgba(255,255,255,0.65)",
+                  marginBottom: 36,
+                  maxWidth: 480,
+                  lineHeight: 1.7,
+                }}
+              >
+                {section.subheadline}
+              </p>
+            )}
+            {/* On dark background: solid_dark becomes white button, text_arrow stays minimal */}
+            {ctaVariant === "text_arrow" ? (
+              <Link
+                href={ctaHref}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  color: "white", textDecoration: "none",
+                  borderBottom: "1px solid rgba(255,255,255,0.45)", paddingBottom: 2,
+                }}
+              >
+                {section.cta_label || "Explore"} →
+              </Link>
+            ) : (
+              <Link
+                href={ctaHref}
+                style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  padding: "14px 36px",
+                  background: "white", color: "var(--color-text)",
+                  fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700,
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  textDecoration: "none", border: "1px solid white",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                  (e.currentTarget as HTMLAnchorElement).style.color = "white";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = "white";
+                  (e.currentTarget as HTMLAnchorElement).style.color = "var(--color-text)";
+                }}
+              >
+                {section.cta_label || "Explore Collection"}
+              </Link>
+            )}
           </div>
         </div>
       </section>

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { Product, Category } from "@/lib/types";
 import ProductCard from "@/components/product/ProductCard";
 
@@ -23,6 +23,11 @@ export default function FullCatalogSection({
   density,
 }: Props) {
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory ?? "all");
+
+  // Sync filter state when URL search param changes (client-side nav between ?category= URLs)
+  useEffect(() => {
+    setActiveCategory(initialCategory ?? "all");
+  }, [initialCategory]);
 
   const filtered = useMemo(() => {
     if (activeCategory === "all") return products;
