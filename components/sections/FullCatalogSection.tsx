@@ -1,0 +1,130 @@
+"use client";
+import { useState, useMemo } from "react";
+import type { Product, Category } from "@/lib/types";
+import ProductCard from "@/components/product/ProductCard";
+
+interface Props {
+  storeSlug: string;
+  products: Product[];
+  categories: Category[];
+  initialCategory?: string;
+  currencyDisplay?: string;
+}
+
+export default function FullCatalogSection({
+  storeSlug,
+  products,
+  categories,
+  initialCategory,
+  currencyDisplay = "TRY",
+}: Props) {
+  const [activeCategory, setActiveCategory] = useState<string>(initialCategory ?? "all");
+
+  const filtered = useMemo(() => {
+    if (activeCategory === "all") return products;
+    return products.filter((p) => p.category_id === activeCategory);
+  }, [products, activeCategory]);
+
+  if (products.length === 0) return null;
+
+  return (
+    <section style={{ padding: "80px 0", background: "var(--color-bg)" }}>
+      <div className="section-container">
+
+        {/* Category filter tabs */}
+        {categories.length > 1 && (
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              marginBottom: 40,
+              paddingBottom: 24,
+              borderBottom: "1px solid var(--color-border)",
+            }}
+          >
+            <button
+              onClick={() => setActiveCategory("all")}
+              style={{
+                padding: "8px 20px",
+                fontFamily: "var(--font-body)",
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                border: "1px solid",
+                borderColor: activeCategory === "all" ? "var(--color-primary)" : "var(--color-border)",
+                background: activeCategory === "all" ? "var(--color-primary)" : "transparent",
+                color: activeCategory === "all" ? "var(--color-bg)" : "var(--color-muted)",
+                transition: "all 0.15s",
+              }}
+            >
+              All
+              <span style={{ marginLeft: 6, opacity: 0.6, fontWeight: 400 }}>
+                {products.length}
+              </span>
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                style={{
+                  padding: "8px 20px",
+                  fontFamily: "var(--font-body)",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  border: "1px solid",
+                  borderColor: activeCategory === cat.id ? "var(--color-primary)" : "var(--color-border)",
+                  background: activeCategory === cat.id ? "var(--color-primary)" : "transparent",
+                  color: activeCategory === cat.id ? "var(--color-bg)" : "var(--color-muted)",
+                  transition: "all 0.15s",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {cat.display_name}
+                <span style={{ marginLeft: 6, opacity: 0.6, fontWeight: 400 }}>
+                  {cat.product_count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Product count */}
+        <p
+          style={{
+            fontFamily: "var(--font-body)",
+            fontSize: 12,
+            color: "var(--color-muted)",
+            marginBottom: 24,
+            letterSpacing: "0.04em",
+          }}
+        >
+          {filtered.length} {filtered.length === 1 ? "product" : "products"}
+        </p>
+
+        {/* Product grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+            gap: 28,
+          }}
+        >
+          {filtered.map((p) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              storeSlug={storeSlug}
+              currencyDisplay={currencyDisplay}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
