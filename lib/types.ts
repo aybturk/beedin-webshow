@@ -103,6 +103,7 @@ export interface Product {
   description_en: string;
   category_id: string;
   category_display: string;
+  subcategory_display?: string;
   category_tr: string;
   brand: string;
   price_try: number;

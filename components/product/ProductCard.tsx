@@ -86,11 +86,25 @@ export default function ProductCard({
               textTransform: "uppercase",
               letterSpacing: "0.06em",
               fontWeight: 600,
-              marginBottom: 4,
+              marginBottom: product.subcategory_display ? 2 : 4,
             }}
           >
             {product.category_display}
           </p>
+          {product.subcategory_display && (
+            <p
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: size === "sm" ? 10 : 11,
+                color: "var(--color-muted)",
+                letterSpacing: "0.04em",
+                marginBottom: 4,
+                opacity: 0.75,
+              }}
+            >
+              {product.subcategory_display}
+            </p>
+          )}
           <p
             style={{
               fontFamily: "var(--font-heading)",
