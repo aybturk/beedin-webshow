@@ -7,6 +7,7 @@ interface Props {
   storeSlug: string;
   products: Product[];
   currencyDisplay?: string;
+  cardVariant?: string;
 }
 
 export default function FeaturedProductsSection({
@@ -14,6 +15,7 @@ export default function FeaturedProductsSection({
   storeSlug,
   products,
   currencyDisplay = "TRY",
+  cardVariant,
 }: Props) {
   if (products.length === 0) return null;
 
@@ -72,6 +74,7 @@ export default function FeaturedProductsSection({
               product={p}
               storeSlug={storeSlug}
               currencyDisplay={currencyDisplay}
+              variant={cardVariant}
             />
           ))}
         </div>

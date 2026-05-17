@@ -9,6 +9,7 @@ interface Props {
   storeSlug: string;
   currencyDisplay?: string;
   size?: "sm" | "md" | "lg";
+  variant?: string;
 }
 
 export default function ProductCard({
@@ -16,11 +17,284 @@ export default function ProductCard({
   storeSlug,
   currencyDisplay = "TRY",
   size = "md",
+  variant = "boutique_large",
 }: Props) {
   const image = product.images?.[0];
   const href = `/demo/${storeSlug}/product/${product.id}`;
   const imgSize = size === "lg" ? 360 : size === "sm" ? 160 : 260;
 
+  // ── catalog_compact: horizontal layout ────────────────────────────────────
+  if (variant === "catalog_compact") {
+    return (
+      <Link href={href} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            alignItems: "center",
+            background: "var(--color-secondary)",
+            height: 100,
+            overflow: "hidden",
+            transition: "box-shadow 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(0,0,0,0.08)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+          }}
+        >
+          {/* Fixed size image */}
+          <div style={{ position: "relative", width: 100, height: 100, flexShrink: 0, overflow: "hidden" }}>
+            {image ? (
+              <Image
+                src={image.url}
+                alt={image.alt || product.title_en}
+                fill
+                sizes="100px"
+                style={{ objectFit: "cover" }}
+                unoptimized
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 28,
+                  color: "var(--color-muted)",
+                  background: "var(--color-border)",
+                }}
+              >
+                🪞
+              </div>
+            )}
+          </div>
+          {/* Text */}
+          <div style={{ flex: 1, minWidth: 0, padding: "8px 12px 8px 0" }}>
+            <p
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 10,
+                color: "var(--color-muted)",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                fontWeight: 600,
+                marginBottom: 4,
+              }}
+            >
+              {product.category_display}
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontSize: 14,
+                fontWeight: 400,
+                color: "var(--color-text)",
+                lineHeight: 1.3,
+                marginBottom: 6,
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {product.title_en}
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--color-text)",
+              }}
+            >
+              {formatPrice(product.price_try, currencyDisplay)}
+            </p>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // ── editorial_minimal: square image, no category label, elegant ────────────
+  if (variant === "editorial_minimal") {
+    return (
+      <Link href={href} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+        <div
+          style={{
+            background: "var(--color-secondary)",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+            (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+            (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+          }}
+        >
+          {/* Square image */}
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              paddingBottom: "100%",
+              background: "var(--color-secondary)",
+              overflow: "hidden",
+            }}
+          >
+            {image ? (
+              <Image
+                src={image.url}
+                alt={image.alt || product.title_en}
+                fill
+                sizes={`${imgSize}px`}
+                style={{ objectFit: "cover" }}
+                unoptimized
+              />
+            ) : (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 40,
+                  color: "var(--color-muted)",
+                }}
+              >
+                🪞
+              </div>
+            )}
+          </div>
+          {/* Info: no category, elegant title */}
+          <div style={{ padding: "14px 4px 4px" }}>
+            <p
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontSize: size === "lg" ? 17 : size === "sm" ? 14 : 16,
+                fontWeight: 400,
+                color: "var(--color-text)",
+                lineHeight: 1.3,
+                marginBottom: 8,
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {product.title_en}
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 12,
+                fontWeight: 400,
+                color: "var(--color-muted)",
+              }}
+            >
+              {formatPrice(product.price_try, currencyDisplay)}
+            </p>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // ── b2b_dense: compact vertical card ──────────────────────────────────────
+  if (variant === "b2b_dense") {
+    return (
+      <Link href={href} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+        <div
+          style={{
+            background: "var(--color-secondary)",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)";
+            (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+            (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+          }}
+        >
+          {/* Square image */}
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              paddingBottom: "100%",
+              background: "var(--color-secondary)",
+              overflow: "hidden",
+            }}
+          >
+            {image ? (
+              <Image
+                src={image.url}
+                alt={image.alt || product.title_en}
+                fill
+                sizes="160px"
+                style={{ objectFit: "cover" }}
+                unoptimized
+              />
+            ) : (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 28,
+                  color: "var(--color-muted)",
+                }}
+              >
+                🪞
+              </div>
+            )}
+          </div>
+          {/* Info: compact, price right-aligned */}
+          <div style={{ padding: "8px 6px 6px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4 }}>
+            <p
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 12,
+                fontWeight: 400,
+                color: "var(--color-text)",
+                lineHeight: 1.2,
+                flex: 1,
+                minWidth: 0,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {product.title_en}
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "var(--color-text)",
+                flexShrink: 0,
+              }}
+            >
+              {formatPrice(product.price_try, currencyDisplay)}
+            </p>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // ── boutique_large (default) ───────────────────────────────────────────────
   return (
     <Link
       href={href}

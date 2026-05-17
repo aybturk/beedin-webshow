@@ -1,3 +1,4 @@
+import React from "react";
 import { notFound } from "next/navigation";
 import { getWebshowPackage, getProducts, getCategories, getProductById } from "@/lib/data";
 import type { Section } from "@/lib/types";
@@ -8,6 +9,8 @@ import FeaturedProductsSection from "@/components/sections/FeaturedProductsSecti
 import BrandStorySection from "@/components/sections/BrandStorySection";
 import FullCatalogSection from "@/components/sections/FullCatalogSection";
 import ContactCtaSection from "@/components/sections/ContactCtaSection";
+import TrustBadgesSection from "@/components/sections/TrustBadgesSection";
+import BulkOrderCtaSection from "@/components/sections/BulkOrderCtaSection";
 
 interface Props { params: { store: string } }
 
@@ -29,6 +32,9 @@ export default function StorePage({ params }: Props) {
   // Resolve hero product
   const heroSourceId = siteConfig.hero?.background_source_id ?? branding.hero_image_source_id;
   const heroProduct = heroSourceId ? getProductById(params.store, heroSourceId) : (allProducts[0] ?? null);
+
+  const cardVariant = siteConfig.product_grid?.card_variant;
+  const gridDensity = siteConfig.product_grid?.density;
 
   const SECTION_MAP: Record<string, (section: Section) => React.ReactNode> = {
     hero: (s) => (
@@ -61,6 +67,7 @@ export default function StorePage({ params }: Props) {
           storeSlug={params.store}
           products={featured}
           currencyDisplay={currencyDisplay}
+          cardVariant={cardVariant}
         />
       );
     },
@@ -74,6 +81,8 @@ export default function StorePage({ params }: Props) {
         products={allProducts}
         categories={allCategories}
         currencyDisplay={currencyDisplay}
+        cardVariant={cardVariant}
+        density={gridDensity}
       />
     ),
     contact_cta: (s) => (
@@ -84,13 +93,19 @@ export default function StorePage({ params }: Props) {
         branding={branding}
       />
     ),
+    trust_badges: (s) => (
+      <TrustBadgesSection key="trust_badges" section={s} branding={branding} />
+    ),
+    bulk_order_cta: (s) => (
+      <BulkOrderCtaSection key="bulk_order_cta" section={s} branding={branding} storeSlug={params.store} />
+    ),
   };
 
   const sections = siteConfig.sections ?? [];
 
   return (
     <>
-      {sections.map((section, i) => {
+      {sections.map((section) => {
         const renderer = SECTION_MAP[section.type];
         if (!renderer) return null;
         return renderer(section);

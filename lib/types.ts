@@ -53,7 +53,8 @@ export type SectionType =
   | "full_catalog"
   | "bulk_order_cta"
   | "trust_badges"
-  | "contact_cta";
+  | "contact_cta"
+  | "editorial_statement";
 
 export interface Section {
   type: SectionType;
@@ -66,6 +67,11 @@ export interface Section {
   source_ids?: string[];
   background_source_id?: string;
   background_mode?: string;
+  layout?: string;
+  image_fit?: "cover" | "contain";
+  image_position?: string;
+  content_alignment?: "left" | "center" | "right";
+  cta_variant?: "solid_dark" | "outline" | "text_arrow";
 }
 
 export interface SiteConfig {
@@ -87,6 +93,16 @@ export interface SiteConfig {
   footer: {
     tagline: string;
     show_source_link: boolean;
+  };
+  product_grid?: {
+    card_variant?: "boutique_large" | "catalog_compact" | "editorial_minimal" | "b2b_dense";
+    density?: "comfortable" | "compact" | "dense";
+    show_category?: boolean;
+    show_subcategory?: boolean;
+  };
+  navigation?: {
+    max_items?: number;
+    collapse_extra_to_shop?: boolean;
   };
 }
 

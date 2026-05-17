@@ -13,6 +13,35 @@ export default function SiteHeader({ storeSlug, siteConfig, branding }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const base = `/demo/${storeSlug}`;
 
+  const allLinks = siteConfig.nav?.links ?? [];
+  const maxItems = siteConfig.navigation?.max_items;
+  const collapseExtra = siteConfig.navigation?.collapse_extra_to_shop ?? false;
+
+  // Compute which links to show in nav
+  let visibleLinks = allLinks;
+  let showMoreLink = false;
+
+  if (maxItems !== undefined && allLinks.length > maxItems) {
+    // Always keep Home (href="/") and Shop (href="/shop") links
+    const homeLinks = allLinks.filter((l) => l.href === "/" || l.href === "/shop");
+    const otherLinks = allLinks.filter((l) => l.href !== "/" && l.href !== "/shop");
+    const remainingSlots = Math.max(0, maxItems - homeLinks.length);
+    const keptOthers = otherLinks.slice(0, remainingSlots);
+    visibleLinks = [...homeLinks, ...keptOthers];
+    showMoreLink = collapseExtra && allLinks.length > visibleLinks.length;
+  }
+
+  const linkStyle = {
+    fontFamily: "var(--font-body)",
+    fontSize: 12,
+    fontWeight: 600,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase" as const,
+    color: "var(--color-muted)",
+    textDecoration: "none",
+    transition: "color 0.15s",
+  };
+
   return (
     <header
       style={{
@@ -57,26 +86,27 @@ export default function SiteHeader({ storeSlug, siteConfig, branding }: Props) {
           }}
           className="hidden md:flex"
         >
-          {siteConfig.nav?.links?.map((link) => (
+          {visibleLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href.startsWith("/") ? `${base}${link.href === "/" ? "" : link.href}` : link.href}
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "var(--color-muted)",
-                textDecoration: "none",
-                transition: "color 0.15s",
-              }}
+              style={linkStyle}
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-text)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--color-muted)")}
             >
               {link.label}
             </Link>
           ))}
+          {showMoreLink && (
+            <Link
+              href={`${base}/shop`}
+              style={linkStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-text)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--color-muted)")}
+            >
+              More
+            </Link>
+          )}
         </nav>
 
         {/* Mobile hamburger */}
@@ -109,7 +139,7 @@ export default function SiteHeader({ storeSlug, siteConfig, branding }: Props) {
             padding: "16px 24px 20px",
           }}
         >
-          {siteConfig.nav?.links?.map((link) => (
+          {allLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href.startsWith("/") ? `${base}${link.href === "/" ? "" : link.href}` : link.href}

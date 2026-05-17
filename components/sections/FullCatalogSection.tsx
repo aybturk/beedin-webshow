@@ -9,6 +9,8 @@ interface Props {
   categories: Category[];
   initialCategory?: string;
   currencyDisplay?: string;
+  cardVariant?: string;
+  density?: string;
 }
 
 export default function FullCatalogSection({
@@ -17,6 +19,8 @@ export default function FullCatalogSection({
   categories,
   initialCategory,
   currencyDisplay = "TRY",
+  cardVariant,
+  density,
 }: Props) {
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory ?? "all");
 
@@ -111,8 +115,13 @@ export default function FullCatalogSection({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: 28,
+            gridTemplateColumns:
+              density === "dense"
+                ? "repeat(auto-fill, minmax(180px, 1fr))"
+                : density === "compact"
+                ? "repeat(auto-fill, minmax(200px, 1fr))"
+                : "repeat(auto-fill, minmax(220px, 1fr))",
+            gap: density === "dense" ? 16 : density === "compact" ? 20 : 28,
           }}
         >
           {filtered.map((p) => (
@@ -121,6 +130,7 @@ export default function FullCatalogSection({
               product={p}
               storeSlug={storeSlug}
               currencyDisplay={currencyDisplay}
+              variant={cardVariant}
             />
           ))}
         </div>
