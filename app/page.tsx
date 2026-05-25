@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { getAllStoreSlugs } from "@/lib/data";
 
-export default function RootPage() {
-  const slugs = getAllStoreSlugs();
+export default async function RootPage() {
+  const slugs = await getAllStoreSlugs();
   if (slugs.length === 1) {
     redirect(`/demo/${slugs[0]}`);
   }

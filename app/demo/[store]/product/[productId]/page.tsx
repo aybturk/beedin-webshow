@@ -6,25 +6,28 @@ import { formatPrice } from "@/lib/utils";
 import ProductCard from "@/components/product/ProductCard";
 
 interface Props {
-  params: { store: string; productId: string };
+  params: Promise<{ store: string; productId: string }>;
 }
 
-export default function ProductPage({ params }: Props) {
-  const pkg = getWebshowPackage(params.store);
-  if (!pkg) notFound();
+export default async function ProductPage({ params }: Props) {
+  const { store, productId } = await params;
 
-  const product = getProductById(params.store, params.productId);
+  const [pkg, product] = await Promise.all([
+    getWebshowPackage(store),
+    getProductById(store, productId),
+  ]);
+  if (!pkg) notFound();
   if (!product) notFound();
 
   const { branding, siteConfig } = pkg;
-  const currencyDisplay = siteConfig.site?.currency_display ?? "TRY";
+  const currencyDisplay = siteConfig.site?.currency_display ?? "EUR";
   const email = siteConfig.site?.lead_capture?.email;
   const ctaHref = email
     ? `mailto:${email}?subject=Inquiry: ${encodeURIComponent(product.title_en)}`
     : `#contact`;
 
   // Related products (same category, exclude self)
-  const related = getProductsByCategory(params.store, product.category_id)
+  const related = (await getProductsByCategory(store, product.category_id))
     .filter((p) => p.id !== product.id)
     .slice(0, 4);
 
@@ -36,11 +39,11 @@ export default function ProductPage({ params }: Props) {
       <div style={{ padding: "16px 0", borderBottom: "1px solid var(--color-border)" }}>
         <div className="section-container">
           <nav style={{ display: "flex", gap: 8, alignItems: "center", fontFamily: "var(--font-body)", fontSize: 12, color: "var(--color-muted)" }}>
-            <Link href={`/demo/${params.store}`} style={{ color: "var(--color-muted)", textDecoration: "none" }}>Home</Link>
+            <Link href={`/demo/${store}`} style={{ color: "var(--color-muted)", textDecoration: "none" }}>Home</Link>
             <span>/</span>
-            <Link href={`/demo/${params.store}/shop`} style={{ color: "var(--color-muted)", textDecoration: "none" }}>Shop</Link>
+            <Link href={`/demo/${store}/shop`} style={{ color: "var(--color-muted)", textDecoration: "none" }}>Shop</Link>
             <span>/</span>
-            <Link href={`/demo/${params.store}/shop/${product.category_id}`} style={{ color: "var(--color-muted)", textDecoration: "none" }}>{product.category_display}</Link>
+            <Link href={`/demo/${store}/shop/${product.category_id}`} style={{ color: "var(--color-muted)", textDecoration: "none" }}>{product.category_display}</Link>
             <span>/</span>
             <span style={{ color: "var(--color-text)" }}>{product.title_en}</span>
           </nav>
@@ -137,7 +140,7 @@ export default function ProductPage({ params }: Props) {
             <div style={{ width: 40, height: 1, background: "var(--color-accent)", marginBottom: 32 }} />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 24 }}>
               {related.map((p) => (
-                <ProductCard key={p.id} product={p} storeSlug={params.store} currencyDisplay={currencyDisplay} />
+                <ProductCard key={p.id} product={p} storeSlug={store} currencyDisplay={currencyDisplay} />
               ))}
             </div>
           </div>

@@ -4,18 +4,21 @@ import { getWebshowPackage, getProductsByCategory, getCategoryById } from "@/lib
 import ProductCard from "@/components/product/ProductCard";
 
 interface Props {
-  params: { store: string; category: string };
+  params: Promise<{ store: string; category: string }>;
 }
 
-export default function CategoryPage({ params }: Props) {
-  const pkg = getWebshowPackage(params.store);
-  if (!pkg) notFound();
+export default async function CategoryPage({ params }: Props) {
+  const { store, category: categoryId } = await params;
 
-  const category = getCategoryById(params.store, params.category);
+  const [pkg, category, products] = await Promise.all([
+    getWebshowPackage(store),
+    getCategoryById(store, categoryId),
+    getProductsByCategory(store, categoryId),
+  ]);
+  if (!pkg) notFound();
   if (!category) notFound();
 
-  const products = getProductsByCategory(params.store, params.category);
-  const currencyDisplay = pkg.siteConfig.site?.currency_display ?? "TRY";
+  const currencyDisplay = pkg.siteConfig.site?.currency_display ?? "EUR";
 
   return (
     <div>
@@ -23,9 +26,9 @@ export default function CategoryPage({ params }: Props) {
       <div style={{ padding: "48px 0 32px", background: "var(--color-secondary)", borderBottom: "1px solid var(--color-border)" }}>
         <div className="section-container">
           <nav style={{ display: "flex", gap: 8, alignItems: "center", fontFamily: "var(--font-body)", fontSize: 12, color: "var(--color-muted)", marginBottom: 20 }}>
-            <Link href={`/demo/${params.store}`} style={{ color: "var(--color-muted)", textDecoration: "none" }}>Home</Link>
+            <Link href={`/demo/${store}`} style={{ color: "var(--color-muted)", textDecoration: "none" }}>Home</Link>
             <span>/</span>
-            <Link href={`/demo/${params.store}/shop`} style={{ color: "var(--color-muted)", textDecoration: "none" }}>Shop</Link>
+            <Link href={`/demo/${store}/shop`} style={{ color: "var(--color-muted)", textDecoration: "none" }}>Shop</Link>
             <span>/</span>
             <span style={{ color: "var(--color-text)" }}>{category.display_name}</span>
           </nav>
@@ -43,7 +46,7 @@ export default function CategoryPage({ params }: Props) {
         <div className="section-container">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 28 }}>
             {products.map((p) => (
-              <ProductCard key={p.id} product={p} storeSlug={params.store} currencyDisplay={currencyDisplay} />
+              <ProductCard key={p.id} product={p} storeSlug={store} currencyDisplay={currencyDisplay} />
             ))}
           </div>
           {products.length === 0 && (

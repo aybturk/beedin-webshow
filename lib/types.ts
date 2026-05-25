@@ -123,11 +123,13 @@ export interface Product {
   category_tr: string;
   brand: string;
   price_try: number;
+  eur_price?: number;
   images: ProductImage[];
   rating?: number | null;
   review_count?: number | null;
   is_featured: boolean;
   tags: string[];
+  /** DRAFT | APPROVED → mapped to demo_only | active for backward compat */
   buy_status: "demo_only" | "active";
   shopify_product_id: string | null;
   buy_url: string | null;

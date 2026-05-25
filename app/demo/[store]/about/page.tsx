@@ -3,10 +3,11 @@ import { getWebshowPackage } from "@/lib/data";
 import BrandStorySection from "@/components/sections/BrandStorySection";
 import ContactCtaSection from "@/components/sections/ContactCtaSection";
 
-interface Props { params: { store: string } }
+interface Props { params: Promise<{ store: string }> }
 
-export default function AboutPage({ params }: Props) {
-  const pkg = getWebshowPackage(params.store);
+export default async function AboutPage({ params }: Props) {
+  const { store } = await params;
+  const pkg = await getWebshowPackage(store);
   if (!pkg) notFound();
 
   const { branding, siteConfig } = pkg;
@@ -33,7 +34,7 @@ export default function AboutPage({ params }: Props) {
           </h1>
           {branding.tagline && (
             <p style={{ fontFamily: "var(--font-heading)", fontSize: 17, fontStyle: "italic", color: "var(--color-muted)" }}>
-              "{branding.tagline}"
+              &ldquo;{branding.tagline}&rdquo;
             </p>
           )}
         </div>

@@ -12,16 +12,19 @@ import ContactCtaSection from "@/components/sections/ContactCtaSection";
 import TrustBadgesSection from "@/components/sections/TrustBadgesSection";
 import BulkOrderCtaSection from "@/components/sections/BulkOrderCtaSection";
 
-interface Props { params: { store: string } }
+interface Props { params: Promise<{ store: string }> }
 
-export default function StorePage({ params }: Props) {
-  const pkg = getWebshowPackage(params.store);
+export default async function StorePage({ params }: Props) {
+  const { store } = await params;
+  const [pkg, allProducts, allCategories] = await Promise.all([
+    getWebshowPackage(store),
+    getProducts(store),
+    getCategories(store),
+  ]);
   if (!pkg) notFound();
 
-  const { branding, siteConfig, productsDoc, categoriesDoc } = pkg;
-  const allProducts = productsDoc.products;
-  const allCategories = categoriesDoc.categories;
-  const currencyDisplay = siteConfig.site?.currency_display ?? "TRY";
+  const { branding, siteConfig } = pkg;
+  const currencyDisplay = siteConfig.site?.currency_display ?? "EUR";
 
   // Build category → products map
   const productsByCategory: Record<string, typeof allProducts> = {};
@@ -31,7 +34,9 @@ export default function StorePage({ params }: Props) {
 
   // Resolve hero product
   const heroSourceId = siteConfig.hero?.background_source_id ?? branding.hero_image_source_id;
-  const heroProduct = heroSourceId ? getProductById(params.store, heroSourceId) : (allProducts[0] ?? null);
+  const heroProduct = heroSourceId
+    ? await getProductById(store, heroSourceId)
+    : (allProducts[0] ?? null);
 
   const cardVariant = siteConfig.product_grid?.card_variant;
   const gridDensity = siteConfig.product_grid?.density;
@@ -42,7 +47,7 @@ export default function StorePage({ params }: Props) {
         key="hero"
         section={s}
         branding={branding}
-        storeSlug={params.store}
+        storeSlug={store}
         heroProduct={heroProduct}
       />
     ),
@@ -50,7 +55,7 @@ export default function StorePage({ params }: Props) {
       <FeaturedCategoriesSection
         key="featured_categories"
         section={s}
-        storeSlug={params.store}
+        storeSlug={store}
         categories={allCategories}
         productsByCategory={productsByCategory}
       />
@@ -58,13 +63,15 @@ export default function StorePage({ params }: Props) {
     featured_products: (s) => {
       const ids = s.source_ids ?? [];
       const featured = ids.length > 0
-        ? ids.map((id) => getProductById(params.store, id)).filter(Boolean) as typeof allProducts
+        ? ids
+            .map((id) => allProducts.find((p) => p.id === id))
+            .filter((p): p is NonNullable<typeof p> => p !== undefined)
         : allProducts.slice(0, 4);
       return (
         <FeaturedProductsSection
           key="featured_products"
           section={s}
-          storeSlug={params.store}
+          storeSlug={store}
           products={featured}
           currencyDisplay={currencyDisplay}
           cardVariant={cardVariant}
@@ -77,7 +84,7 @@ export default function StorePage({ params }: Props) {
     full_catalog: (_s) => (
       <FullCatalogSection
         key="full_catalog"
-        storeSlug={params.store}
+        storeSlug={store}
         products={allProducts}
         categories={allCategories}
         currencyDisplay={currencyDisplay}
@@ -97,7 +104,7 @@ export default function StorePage({ params }: Props) {
       <TrustBadgesSection key="trust_badges" section={s} branding={branding} />
     ),
     bulk_order_cta: (s) => (
-      <BulkOrderCtaSection key="bulk_order_cta" section={s} branding={branding} storeSlug={params.store} />
+      <BulkOrderCtaSection key="bulk_order_cta" section={s} branding={branding} storeSlug={store} />
     ),
   };
 

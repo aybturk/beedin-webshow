@@ -3,18 +3,22 @@ import { getWebshowPackage, getProducts, getCategories } from "@/lib/data";
 import FullCatalogSection from "@/components/sections/FullCatalogSection";
 
 interface Props {
-  params: { store: string };
-  searchParams: { category?: string };
+  params: Promise<{ store: string }>;
+  searchParams: Promise<{ category?: string }>;
 }
 
-export default function ShopPage({ params, searchParams }: Props) {
-  const pkg = getWebshowPackage(params.store);
+export default async function ShopPage({ params, searchParams }: Props) {
+  const { store } = await params;
+  const { category: initialCategory = "all" } = await searchParams;
+
+  const [pkg, products, categories] = await Promise.all([
+    getWebshowPackage(store),
+    getProducts(store),
+    getCategories(store),
+  ]);
   if (!pkg) notFound();
 
-  const products = getProducts(params.store);
-  const categories = getCategories(params.store);
-  const currencyDisplay = pkg.siteConfig.site?.currency_display ?? "TRY";
-  const initialCategory = searchParams.category ?? "all";
+  const currencyDisplay = pkg.siteConfig.site?.currency_display ?? "EUR";
 
   return (
     <div>
@@ -52,7 +56,7 @@ export default function ShopPage({ params, searchParams }: Props) {
       </div>
 
       <FullCatalogSection
-        storeSlug={params.store}
+        storeSlug={store}
         products={products}
         categories={categories}
         initialCategory={initialCategory}

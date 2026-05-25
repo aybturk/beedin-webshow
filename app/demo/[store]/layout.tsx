@@ -4,14 +4,16 @@ import { getWebshowPackage } from "@/lib/data";
 import { buildThemeVars, themeClass, googleFontsUrl } from "@/lib/theme";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
+import PageTransition from "@/components/layout/PageTransition";
 
 interface Props {
   children: React.ReactNode;
-  params: { store: string };
+  params: Promise<{ store: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const pkg = getWebshowPackage(params.store);
+  const { store } = await params;
+  const pkg = await getWebshowPackage(store);
   if (!pkg) return { title: "Demo Site" };
   return {
     title: pkg.siteConfig.site?.title ?? pkg.branding.store_display_name,
@@ -19,8 +21,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function StoreLayout({ children, params }: Props) {
-  const pkg = getWebshowPackage(params.store);
+export default async function StoreLayout({ children, params }: Props) {
+  const { store } = await params;
+  const pkg = await getWebshowPackage(store);
   if (!pkg) notFound();
 
   const { branding, siteConfig } = pkg;
@@ -52,13 +55,15 @@ export default function StoreLayout({ children, params }: Props) {
         }}
       >
         <SiteHeader
-          storeSlug={params.store}
+          storeSlug={store}
           siteConfig={siteConfig}
           branding={branding}
         />
-        <main style={{ flex: 1 }}>{children}</main>
+        <main style={{ flex: 1 }}>
+          <PageTransition>{children}</PageTransition>
+        </main>
         <SiteFooter
-          storeSlug={params.store}
+          storeSlug={store}
           siteConfig={siteConfig}
           branding={branding}
         />
