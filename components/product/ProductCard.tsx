@@ -12,6 +12,72 @@ interface Props {
   variant?: string;
 }
 
+/** Renders price or a "Preview only" label when product is not purchasable. */
+function PriceLabel({
+  product,
+  currencyDisplay,
+  fontSize,
+  fontWeight = 700,
+}: {
+  product: Product;
+  currencyDisplay: string;
+  fontSize: number | string;
+  fontWeight?: number;
+}) {
+  const purchasable = product.is_purchasable ?? product.buy_status === "active";
+  // Prefer EUR price when currencyDisplay is EUR and eur_price is available
+  const displayPrice =
+    currencyDisplay === "EUR" && product.eur_price && product.eur_price > 0
+      ? formatPrice(product.eur_price, "EUR")
+      : formatPrice(product.price_try, currencyDisplay);
+
+  if (!purchasable) {
+    return (
+      <span
+        style={{
+          fontFamily: "var(--font-body)",
+          fontSize,
+          fontWeight: 400,
+          color: "var(--color-muted)",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          opacity: 0.7,
+        }}
+      >
+        <span
+          style={{
+            fontSize: typeof fontSize === "number" ? fontSize - 2 : 10,
+            fontWeight: 500,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            border: "1px solid currentColor",
+            borderRadius: 3,
+            padding: "1px 5px",
+            lineHeight: 1.4,
+          }}
+        >
+          Preview
+        </span>
+        <span style={{ textDecoration: "line-through" }}>{displayPrice}</span>
+      </span>
+    );
+  }
+
+  return (
+    <span
+      style={{
+        fontFamily: "var(--font-body)",
+        fontSize,
+        fontWeight,
+        color: "var(--color-text)",
+      }}
+    >
+      {displayPrice}
+    </span>
+  );
+}
+
 export default function ProductCard({
   product,
   storeSlug,
@@ -103,16 +169,7 @@ export default function ProductCard({
             >
               {product.title_en}
             </p>
-            <p
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 13,
-                fontWeight: 700,
-                color: "var(--color-text)",
-              }}
-            >
-              {formatPrice(product.price_try, currencyDisplay)}
-            </p>
+            <PriceLabel product={product} currencyDisplay={currencyDisplay} fontSize={13} />
           </div>
         </div>
       </Link>
@@ -190,16 +247,7 @@ export default function ProductCard({
             >
               {product.title_en}
             </p>
-            <p
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                fontWeight: 400,
-                color: "var(--color-muted)",
-              }}
-            >
-              {formatPrice(product.price_try, currencyDisplay)}
-            </p>
+            <PriceLabel product={product} currencyDisplay={currencyDisplay} fontSize={12} fontWeight={400} />
           </div>
         </div>
       </Link>
@@ -277,17 +325,7 @@ export default function ProductCard({
             >
               {product.title_en}
             </p>
-            <p
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                fontWeight: 700,
-                color: "var(--color-text)",
-                flexShrink: 0,
-              }}
-            >
-              {formatPrice(product.price_try, currencyDisplay)}
-            </p>
+            <PriceLabel product={product} currencyDisplay={currencyDisplay} fontSize={12} />
           </div>
         </div>
       </Link>
@@ -395,16 +433,7 @@ export default function ProductCard({
           >
             {product.title_en}
           </p>
-          <p
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: size === "sm" ? 13 : 14,
-              fontWeight: 700,
-              color: "var(--color-text)",
-            }}
-          >
-            {formatPrice(product.price_try, currencyDisplay)}
-          </p>
+          <PriceLabel product={product} currencyDisplay={currencyDisplay} fontSize={size === "sm" ? 13 : 14} />
         </div>
       </div>
     </Link>

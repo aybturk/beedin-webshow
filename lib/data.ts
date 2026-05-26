@@ -194,7 +194,8 @@ function adaptProduct(p: Record<string, unknown>): Product {
       : typeof p.tags === "string" && p.tags
       ? (p.tags as string).split(",").filter(Boolean)
       : [],
-    buy_status: (p.buy_status === "APPROVED" ? "active" : "demo_only") as Product["buy_status"],
+    buy_status: ((p.buy_status === "active" || p.buy_status === "APPROVED") ? "active" : "demo_only") as Product["buy_status"],
+    is_purchasable: Boolean(p.is_purchasable ?? false),
     shopify_product_id: (p.shopify_product_id as string) ?? null,
     buy_url: (p.buy_url as string) ?? null,
   };

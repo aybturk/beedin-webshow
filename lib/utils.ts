@@ -1,7 +1,10 @@
-export function formatPrice(priceTry: number, currencyDisplay = "TRY"): string {
-  if (!priceTry) return "";
+export function formatPrice(price: number, currencyDisplay = "TRY"): string {
+  if (!price) return "";
   if (currencyDisplay === "TRY") {
-    return `${Math.round(priceTry).toLocaleString("tr-TR")} ₺`;
+    return `${Math.round(price).toLocaleString("tr-TR")} ₺`;
   }
-  return `${Math.round(priceTry).toLocaleString()} ${currencyDisplay}`;
+  if (currencyDisplay === "EUR") {
+    return `€${price.toLocaleString("en-EU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `${price.toLocaleString()} ${currencyDisplay}`;
 }

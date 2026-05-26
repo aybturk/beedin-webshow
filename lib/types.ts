@@ -131,6 +131,8 @@ export interface Product {
   tags: string[];
   /** DRAFT | APPROVED → mapped to demo_only | active for backward compat */
   buy_status: "demo_only" | "active";
+  /** True only when approval_status=APPROVED AND eur_price>0 AND listing.is_active=true */
+  is_purchasable?: boolean;
   shopify_product_id: string | null;
   buy_url: string | null;
 }
