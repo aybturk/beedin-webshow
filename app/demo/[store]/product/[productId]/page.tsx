@@ -4,6 +4,33 @@ import Link from "next/link";
 import { getWebshowPackage, getProductById, getProductsByCategory } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
 import ProductCard from "@/components/product/ProductCard";
+import type { Product } from "@/lib/types";
+
+function DetailPrice({ product, currencyDisplay }: { product: Product; currencyDisplay: string }) {
+  const purchasable = product.is_purchasable ?? product.buy_status === "active";
+  const price =
+    currencyDisplay === "EUR" && product.eur_price && product.eur_price > 0
+      ? formatPrice(product.eur_price, "EUR")
+      : formatPrice(product.price_try, currencyDisplay);
+
+  if (!purchasable) {
+    return (
+      <div style={{ marginBottom: 24 }}>
+        <p style={{ fontFamily: "var(--font-heading)", fontSize: 28, fontWeight: 500, color: "var(--color-muted)", opacity: 0.65 }}>
+          {price}
+        </p>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-muted)", opacity: 0.5, marginTop: 4 }}>
+          Preview price · not yet on sale
+        </p>
+      </div>
+    );
+  }
+  return (
+    <p style={{ fontFamily: "var(--font-heading)", fontSize: 28, fontWeight: 500, color: "var(--color-text)", marginBottom: 24 }}>
+      {price}
+    </p>
+  );
+}
 
 interface Props {
   params: Promise<{ store: string; productId: string }>;
@@ -111,9 +138,7 @@ export default async function ProductPage({ params }: Props) {
 
             <div style={{ width: 40, height: 1, background: "var(--color-border)", marginBottom: 20 }} />
 
-            <p style={{ fontFamily: "var(--font-heading)", fontSize: 28, fontWeight: 500, color: "var(--color-text)", marginBottom: 24 }}>
-              {formatPrice(product.price_try, currencyDisplay)}
-            </p>
+            <DetailPrice product={product} currencyDisplay={currencyDisplay} />
 
             {product.description_en && (
               <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--color-muted)", lineHeight: 1.7, marginBottom: 32 }}>
@@ -121,12 +146,16 @@ export default async function ProductPage({ params }: Props) {
               </p>
             )}
 
-            {/* CTA */}
+            {/* CTA — always show inquiry button; label reflects purchasable state */}
             <a href={ctaHref} className="btn-primary" style={{ width: "100%", marginBottom: 12, justifyContent: "center" }}>
-              {siteConfig.site?.contact_cta_label ?? "Request Information"}
+              {(product.is_purchasable ?? product.buy_status === "active")
+                ? (siteConfig.site?.contact_cta_label ?? "Request Information")
+                : "Enquire About This Product"}
             </a>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--color-muted)", textAlign: "center", letterSpacing: "0.04em" }}>
-              This is a demo site. No actual purchase will be processed.
+              {(product.is_purchasable ?? product.buy_status === "active")
+                ? "This is a demo site. No actual purchase will be processed."
+                : "This product is in preview — not yet available for purchase."}
             </p>
           </div>
         </div>

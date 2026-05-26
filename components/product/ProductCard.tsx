@@ -36,30 +36,33 @@ function PriceLabel({
       <span
         style={{
           fontFamily: "var(--font-body)",
-          fontSize,
-          fontWeight: 400,
-          color: "var(--color-muted)",
           display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          opacity: 0.7,
+          flexDirection: "column",
+          gap: 2,
         }}
       >
         <span
           style={{
-            fontSize: typeof fontSize === "number" ? fontSize - 2 : 10,
-            fontWeight: 500,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            border: "1px solid currentColor",
-            borderRadius: 3,
-            padding: "1px 5px",
-            lineHeight: 1.4,
+            fontSize,
+            fontWeight: 400,
+            color: "var(--color-muted)",
+            opacity: 0.65,
           }}
         >
-          Preview
+          {displayPrice}
         </span>
-        <span style={{ textDecoration: "line-through" }}>{displayPrice}</span>
+        <span
+          style={{
+            fontSize: typeof fontSize === "number" ? Math.max(fontSize - 3, 9) : 9,
+            fontWeight: 500,
+            letterSpacing: "0.07em",
+            textTransform: "uppercase",
+            color: "var(--color-muted)",
+            opacity: 0.5,
+          }}
+        >
+          Preview price
+        </span>
       </span>
     );
   }
