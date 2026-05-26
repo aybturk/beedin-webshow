@@ -23,7 +23,7 @@ export default function FeaturedProductsSection({
   if (products.length === 0) return null;
 
   return (
-    <section style={{ padding: "80px 0", background: "var(--color-secondary)" }}>
+    <section className="section-pad-v" style={{ background: "var(--color-secondary)" }}>
       <div className="section-container">
         {/* Header */}
         <motion.div

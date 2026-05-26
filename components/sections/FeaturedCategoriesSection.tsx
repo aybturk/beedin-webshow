@@ -21,7 +21,7 @@ export default function FeaturedCategoriesSection({
   if (displayed.length === 0) return null;
 
   return (
-    <section style={{ padding: "80px 0", background: "var(--color-bg)" }}>
+    <section className="section-pad-v" style={{ background: "var(--color-bg)" }}>
       <div className="section-container">
         {section.title && (
           <motion.div
@@ -41,7 +41,7 @@ export default function FeaturedCategoriesSection({
           initial="hidden"
           whileInView="visible"
           viewport={defaultViewport}
-          style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(displayed.length, 4)}, 1fr)`, gap: 16 }}
+          style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(160px, 1fr))`, gap: 16 }}
         >
           {displayed.map((cat) => {
             const prods = productsByCategory[cat.id] ?? [];

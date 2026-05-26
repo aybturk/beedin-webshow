@@ -42,7 +42,7 @@ export default async function CategoryPage({ params }: Props) {
       </div>
 
       {/* Products */}
-      <div style={{ padding: "48px 0" }}>
+      <div className="section-pad-v">
         <div className="section-container">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 28 }}>
             {products.map((p) => (

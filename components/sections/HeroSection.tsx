@@ -90,10 +90,7 @@ export default function HeroSection({ section, branding, storeSlug, heroProduct 
   if (layout === "hero_catalog_clean") {
     return (
       <section style={{ background: "var(--color-secondary)", padding: "64px 0" }}>
-        <div
-          className="section-container"
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}
-        >
+        <div className="section-container grid-2col">
           <motion.div
             variants={heroStagger}
             initial="hidden"
@@ -173,12 +170,12 @@ export default function HeroSection({ section, branding, storeSlug, heroProduct 
   // ── hero_product_focus ────────────────────────────────────────────────────
   if (layout === "hero_product_focus") {
     return (
-      <section style={{ background: "var(--color-secondary)", minHeight: "100vh", display: "grid", gridTemplateColumns: "35fr 65fr", overflow: "hidden" }}>
+      <section className="hero-product-focus-grid" style={{ background: "var(--color-secondary)" }}>
         <motion.div
           variants={heroStagger}
           initial="hidden"
           animate="visible"
-          style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 48px 80px max(48px, calc((100vw - 1200px) / 2 + 24px))" }}
+          className="hero-product-focus-text"
         >
           <motion.p variants={heroTextItem} style={{ fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-muted)", marginBottom: 24 }}>
             {branding.store_display_name}
@@ -199,7 +196,8 @@ export default function HeroSection({ section, branding, storeSlug, heroProduct 
             initial={{ opacity: 0, scale: 1.04 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-            style={{ position: "relative", overflow: "hidden" }}
+            className="hero-product-focus-image"
+            style={{ position: "relative", overflow: "hidden", minHeight: 500 }}
           >
             <Image src={heroImage.url} alt={heroImage.alt || section.headline || ""} fill style={{ objectFit: "cover" }} priority unoptimized />
           </motion.div>
@@ -309,13 +307,14 @@ export default function HeroSection({ section, branding, storeSlug, heroProduct 
   // ── hero_split (default / boutique) ──────────────────────────────────────
   return (
     <section style={{ background: "var(--color-bg)", padding: "0", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: heroImage ? "1fr 1fr" : "1fr", minHeight: "calc(100vh - 64px)" }}>
+      <div className={heroImage ? "hero-split-grid" : undefined} style={!heroImage ? { display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "calc(100vh - 64px)" } : undefined}>
         {/* Text side */}
         <motion.div
           variants={heroStagger}
           initial="hidden"
           animate="visible"
-          style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 60px 80px max(60px, calc((100vw - 1200px) / 2 + 24px))" }}
+          className={heroImage ? "hero-split-text" : undefined}
+          style={!heroImage ? { display: "flex", flexDirection: "column", justifyContent: "center", padding: "80px 60px" } : undefined}
         >
           <motion.p variants={heroTextItem} style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--color-accent)", marginBottom: 20 }}>
             {branding.store_display_name}

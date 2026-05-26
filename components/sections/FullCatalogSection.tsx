@@ -37,7 +37,7 @@ export default function FullCatalogSection({
   if (products.length === 0) return null;
 
   return (
-    <section style={{ padding: "80px 0", background: "var(--color-bg)" }}>
+    <section className="section-pad-v" style={{ background: "var(--color-bg)" }}>
       <div className="section-container">
 
         {/* Category filter tabs */}

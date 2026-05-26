@@ -78,11 +78,11 @@ export default async function ProductPage({ params }: Props) {
       </div>
 
       {/* Product detail */}
-      <div className="section-container" style={{ padding: "60px 24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }}>
+      <div className="section-container section-pad-v">
+        <div className="product-detail-grid">
 
           {/* Image */}
-          <div style={{ position: "sticky", top: 80 }}>
+          <div className="sticky-desktop">
             <div
               style={{
                 position: "relative",
@@ -163,7 +163,7 @@ export default async function ProductPage({ params }: Props) {
 
       {/* Related products */}
       {related.length > 0 && (
-        <div style={{ padding: "60px 0", background: "var(--color-secondary)", borderTop: "1px solid var(--color-border)" }}>
+        <div className="section-pad-v" style={{ background: "var(--color-secondary)", borderTop: "1px solid var(--color-border)" }}>
           <div className="section-container">
             <h2 className="section-title" style={{ marginBottom: 8 }}>You may also like</h2>
             <div style={{ width: 40, height: 1, background: "var(--color-accent)", marginBottom: 32 }} />

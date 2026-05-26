@@ -123,3 +123,134 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0 auto;
   padding: 0 24px;
 }
+
+/* ── Responsive layout helpers ────────────────────────────────────────────── */
+
+/* 2-column grid that stacks on mobile */
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+/* Product detail: image | info */
+.product-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: start;
+}
+
+/* Hero split: full-height text | image */
+.hero-split-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: calc(100vh - 64px);
+}
+
+.hero-split-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px 60px 80px max(60px, calc((100vw - 1200px) / 2 + 24px));
+}
+
+/* Hero product focus: narrow text | wide image */
+.hero-product-focus-grid {
+  display: grid;
+  grid-template-columns: 35fr 65fr;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.hero-product-focus-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px 48px 80px max(48px, calc((100vw - 1200px) / 2 + 24px));
+}
+
+/* Sticky image on desktop only */
+.sticky-desktop {
+  position: sticky;
+  top: 80px;
+}
+
+/* Section vertical padding — desktop full, mobile halved */
+.section-pad-v {
+  padding-top: 60px;
+  padding-bottom: 60px;
+}
+
+@media (max-width: 768px) {
+  .section-container {
+    padding: 0 16px;
+  }
+
+  .grid-2col,
+  .product-detail-grid,
+  .hero-split-grid,
+  .hero-product-focus-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .hero-split-text {
+    padding: 48px 20px 40px;
+    min-height: auto;
+  }
+
+  .hero-product-focus-text {
+    padding: 48px 20px;
+  }
+
+  .hero-split-grid {
+    min-height: auto;
+  }
+
+  .hero-product-focus-grid {
+    min-height: auto;
+  }
+
+  /* Hero product focus: image comes before text on mobile → use order */
+  .hero-product-focus-image {
+    order: -1;
+    height: 56vw;
+    min-height: 220px;
+    max-height: 380px;
+  }
+
+  /* Product detail: full-width stack */
+  .product-detail-grid {
+    gap: 32px;
+  }
+
+  .sticky-desktop {
+    position: relative;
+    top: auto;
+  }
+
+  .section-pad-v {
+    padding-top: 36px;
+    padding-bottom: 36px;
+  }
+
+  /* Reduce section title size on mobile */
+  .section-title {
+    font-size: clamp(20px, 6vw, 28px);
+  }
+
+  /* Touch-friendly btn padding */
+  .btn-primary,
+  .btn-outline {
+    padding: 14px 24px;
+    min-height: 48px;
+  }
+
+  /* Full-width CTA button on mobile */
+  .btn-primary-fullwidth {
+    width: 100%;
+    justify-content: center;
+  }
+}
