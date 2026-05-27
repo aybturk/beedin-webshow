@@ -278,11 +278,11 @@ function ProductCard({
             fontSize: 10,
             fontWeight: 700,
             letterSpacing: "0.06em",
-            background: isBlocked ? "#fee2e2" : isPublished ? "#dcfce7" : "#f3f4f6",
-            color: isBlocked ? "#dc2626" : isPublished ? "#16a34a" : "#888",
+            background: isBlocked ? "#fee2e2" : isPublished ? "#e0f2fe" : "#f3f4f6",
+            color: isBlocked ? "#dc2626" : isPublished ? "#0369a1" : "#888",
           }}
         >
-          {isBlocked ? "BLOCKED" : isPublished ? "LIVE" : "HIDDEN"}
+          {isBlocked ? "BLOCKED" : isPublished ? "VISIBLE" : "HIDDEN"}
         </div>
       </div>
 
@@ -297,6 +297,30 @@ function ProductCard({
         <p style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
           €{product.eur_price.toFixed(2)}
         </p>
+      </div>
+
+      {/* Edit link */}
+      <div style={{ padding: "0 12px 6px" }}>
+        <a
+          href={`/portal/products/${product.source_id}`}
+          style={{
+            display: "block",
+            width: "100%",
+            padding: "7px 0",
+            textAlign: "center",
+            border: "1px solid #e5e5e3",
+            borderRadius: 4,
+            background: "#fff",
+            color: "#1a1a1a",
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.05em",
+            textTransform: "uppercase" as const,
+            textDecoration: "none",
+          }}
+        >
+          Edit →
+        </a>
       </div>
 
       {/* Toggle button */}
