@@ -2,19 +2,17 @@
 /**
  * Product Workspace — /portal/products/[id]
  *
- * Full product editing page for a single owned product.
- * Tabbed layout: Content | Pricing & Visibility
+ * Tabbed layout: Content | Images | Pricing & Visibility
  *
- * Ownership: all fetches/saves go through the BFF proxy which injects the
- * merchant's JWT. The backend rejects any product not owned by that merchant.
- *
- * Security: description is edited as plain text, sanitized server-side.
- * The description_html returned from the API is safe to render (backend-sanitized).
- *
- * D13: is_purchasable always stays false. Price changes update the storefront
- * preview price only — no Shopify sync until Bridge (Adım D).
+ * Images tab (Faz 2):
+ *   - Full gallery from GET /api/portal/products/{id}/images
+ *   - SOURCE (Trendyol CDN) / UPLOADED / GENERATED badges
+ *   - Upload new image (POST multipart, max 10 MB, JPEG/PNG/WebP)
+ *   - Set as primary (PATCH action=set_primary)
+ *   - Archive / restore (PATCH action=archive | restore)
+ *   - No hard delete — archive only
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 
 type Product = {
@@ -35,7 +33,19 @@ type Product = {
   can_publish: boolean;
 };
 
-type Tab = "content" | "pricing";
+type ImageAsset = {
+  asset_id: string | null;      // null for legacy inline Trendyol images
+  public_url: string;
+  image_role: string;           // primary | gallery | generated | hero
+  source_type: string;          // trendyol | merchant_upload | ai_generated
+  storage_provider: string;     // external_cdn | r2
+  mime_type: string;
+  sort_order: number;
+  is_archived: boolean;
+  created_at: string | null;
+};
+
+type Tab = "content" | "images" | "pricing";
 
 const REVIEW_STATUS_LABEL: Record<string, string> = {
   NOT_REQUIRED: "Cleared",
@@ -76,6 +86,18 @@ export default function ProductWorkspacePage() {
   const [toggling, setToggling] = useState(false);
   const [publishError, setPublishError] = useState("");
 
+  // Images tab state
+  const [images, setImages] = useState<ImageAsset[]>([]);
+  const [imagesLoading, setImagesLoading] = useState(false);
+  const [imagesError, setImagesError] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState("");
+  const [assetAction, setAssetAction] = useState<string | null>(null); // asset_id being actioned
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [r2Enabled, setR2Enabled] = useState(false);
+
   const fetchProduct = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -98,6 +120,70 @@ export default function ProductWorkspacePage() {
   }, [productId, router]);
 
   useEffect(() => { fetchProduct(); }, [fetchProduct]);
+
+  const fetchImages = useCallback(async () => {
+    if (!productId) return;
+    setImagesLoading(true);
+    setImagesError("");
+    try {
+      const res = await fetch(
+        `/api/portal/products/${productId}/images?include_archived=${showArchived}`,
+      );
+      if (res.status === 401) { router.push("/portal/login"); return; }
+      if (!res.ok) throw new Error("Failed to load images");
+      const data = await res.json();
+      setImages(data.assets ?? []);
+      setR2Enabled(data.r2_enabled ?? false);
+    } catch (e: unknown) {
+      setImagesError(e instanceof Error ? e.message : "Could not load images");
+    } finally {
+      setImagesLoading(false);
+    }
+  }, [productId, showArchived, router]);
+
+  useEffect(() => {
+    if (tab === "images") fetchImages();
+  }, [tab, fetchImages]);
+
+  async function handleUpload(file: File) {
+    setUploading(true);
+    setUploadError("");
+    setUploadSuccess("");
+    const form = new FormData();
+    form.append("file", file);
+    try {
+      const res = await fetch(`/api/portal/products/${productId}/images`, {
+        method: "POST",
+        body: form,
+        // Do NOT set Content-Type — browser sets it with correct boundary
+      });
+      const data = await res.json();
+      if (!res.ok) { setUploadError(data.detail ?? "Upload failed"); return; }
+      setUploadSuccess("Image uploaded successfully.");
+      setTimeout(() => setUploadSuccess(""), 4000);
+      fetchImages();
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleAssetAction(assetId: string, action: "set_primary" | "archive" | "restore") {
+    setAssetAction(assetId + ":" + action);
+    try {
+      const res = await fetch(`/api/portal/products/${productId}/images/${assetId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.detail ?? "Action failed"); return; }
+      // Refresh primary in product left panel too if set_primary
+      if (action === "set_primary") fetchProduct();
+      fetchImages();
+    } finally {
+      setAssetAction(null);
+    }
+  }
 
   async function handleSave() {
     if (!product) return;
@@ -363,7 +449,7 @@ export default function ProductWorkspacePage() {
         <div>
           {/* Tabs */}
           <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e5e3", marginBottom: 24 }}>
-            {(["content", "pricing"] as Tab[]).map((t) => (
+            {(["content", "images", "pricing"] as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -380,7 +466,7 @@ export default function ProductWorkspacePage() {
                   textTransform: "capitalize",
                 }}
               >
-                {t === "content" ? "Content" : "Pricing & Visibility"}
+                {t === "content" ? "Content" : t === "images" ? "Images" : "Pricing & Visibility"}
               </button>
             ))}
           </div>
@@ -450,6 +536,159 @@ export default function ProductWorkspacePage() {
                 </div>
               )}
 
+            </div>
+          )}
+
+          {/* ── Images tab ──────────────────────────────────────────── */}
+          {tab === "images" && (
+            <div>
+              {/* Upload area */}
+              <div style={{ marginBottom: 20, padding: 16, background: "#f9f9f7", border: "1px solid #e5e5e3", borderRadius: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a", margin: 0 }}>
+                    Upload New Image
+                  </p>
+                  {!r2Enabled && (
+                    <span style={{ fontSize: 11, color: "#d97706", background: "#fffbeb", border: "1px solid #fde68a", padding: "2px 8px", borderRadius: 10 }}>
+                      Storage not configured
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontSize: 11, color: "#aaa", marginBottom: 10 }}>
+                  JPEG, PNG or WebP · Max 10 MB · Archived, never permanently deleted
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleUpload(f);
+                    e.target.value = "";
+                  }}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!r2Enabled || uploading}
+                  style={{
+                    padding: "8px 20px",
+                    background: r2Enabled && !uploading ? "#1a1a1a" : "#e5e5e3",
+                    color: r2Enabled && !uploading ? "#fff" : "#999",
+                    border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600,
+                    cursor: r2Enabled && !uploading ? "pointer" : "not-allowed",
+                  }}
+                >
+                  {uploading ? "Uploading…" : "Choose file"}
+                </button>
+                {uploadSuccess && (
+                  <p style={{ fontSize: 12, color: "#16a34a", marginTop: 8 }}>✓ {uploadSuccess}</p>
+                )}
+                {uploadError && (
+                  <p style={{ fontSize: 12, color: "#dc2626", marginTop: 8 }}>✗ {uploadError}</p>
+                )}
+              </div>
+
+              {/* Gallery header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>
+                  Gallery ({images.filter(i => !i.is_archived).length} active
+                  {showArchived ? `, ${images.filter(i => i.is_archived).length} archived` : ""})
+                </p>
+                <button
+                  onClick={() => setShowArchived(v => !v)}
+                  style={{ fontSize: 11, color: "#888", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                >
+                  {showArchived ? "Hide archived" : "Show archived"}
+                </button>
+              </div>
+
+              {imagesLoading && (
+                <p style={{ color: "#888", fontSize: 13, padding: "24px 0", textAlign: "center" }}>Loading images…</p>
+              )}
+              {imagesError && (
+                <p style={{ color: "#dc2626", fontSize: 13 }}>{imagesError}</p>
+              )}
+              {!imagesLoading && images.length === 0 && (
+                <p style={{ color: "#aaa", fontSize: 13, textAlign: "center", padding: "32px 0" }}>No images found.</p>
+              )}
+
+              {/* Image grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
+                {images.map((img, i) => {
+                  const isPrimary = img.image_role === "primary";
+                  const isActioning = assetAction?.startsWith(img.asset_id ?? "___");
+                  const badgeText = img.source_type === "merchant_upload" ? "UPLOADED"
+                    : img.source_type === "ai_generated" ? "AI" : "SOURCE";
+                  const badgeColor = img.source_type === "merchant_upload" ? "#2563eb"
+                    : img.source_type === "ai_generated" ? "#7c3aed" : "#888";
+
+                  return (
+                    <div
+                      key={img.asset_id ?? `legacy-${i}`}
+                      style={{
+                        border: isPrimary ? "2px solid #1a1a1a" : "1px solid #e5e5e3",
+                        borderRadius: 8, overflow: "hidden", background: "#fff",
+                        opacity: img.is_archived ? 0.45 : 1, position: "relative",
+                      }}
+                    >
+                      <div style={{ aspectRatio: "1", background: "#f3f4f6", overflow: "hidden" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img.public_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+
+                      {/* Badges */}
+                      <div style={{ position: "absolute", top: 6, left: 6, display: "flex", gap: 3, flexWrap: "wrap" }}>
+                        {isPrimary && (
+                          <span style={{ fontSize: 9, fontWeight: 700, background: "#1a1a1a", color: "#fff", padding: "2px 6px", borderRadius: 8 }}>
+                            PRIMARY
+                          </span>
+                        )}
+                        <span style={{ fontSize: 9, fontWeight: 700, background: "#fff", color: badgeColor, border: `1px solid ${badgeColor}`, padding: "2px 6px", borderRadius: 8 }}>
+                          {badgeText}
+                        </span>
+                        {img.is_archived && (
+                          <span style={{ fontSize: 9, fontWeight: 700, background: "#fee2e2", color: "#dc2626", padding: "2px 6px", borderRadius: 8 }}>
+                            ARCHIVED
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Actions — only for tracked assets (asset_id !== null) */}
+                      {img.asset_id && (
+                        <div style={{ padding: "6px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
+                          {!isPrimary && !img.is_archived && (
+                            <button
+                              onClick={() => handleAssetAction(img.asset_id!, "set_primary")}
+                              disabled={!!isActioning}
+                              style={actionBtnStyle("#1a1a1a", "#fff", !!isActioning)}
+                            >
+                              {isActioning ? "…" : "Set primary"}
+                            </button>
+                          )}
+                          {!img.is_archived ? (
+                            <button
+                              onClick={() => handleAssetAction(img.asset_id!, "archive")}
+                              disabled={!!isActioning || isPrimary}
+                              style={actionBtnStyle("#dc2626", "#fef2f2", !!isActioning || isPrimary)}
+                            >
+                              {isActioning ? "…" : "Archive"}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleAssetAction(img.asset_id!, "restore")}
+                              disabled={!!isActioning}
+                              style={actionBtnStyle("#16a34a", "#f0fdf4", !!isActioning)}
+                            >
+                              {isActioning ? "…" : "Restore"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -562,6 +801,22 @@ function RuleRow({
       </span>
     </div>
   );
+}
+
+function actionBtnStyle(color: string, bg: string, disabled: boolean): React.CSSProperties {
+  return {
+    width: "100%",
+    padding: "5px 0",
+    border: `1px solid ${disabled ? "#e5e5e3" : color}`,
+    borderRadius: 4,
+    background: disabled ? "#f9f9f7" : bg,
+    color: disabled ? "#ccc" : color,
+    fontSize: 10,
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase" as const,
+    cursor: disabled ? "not-allowed" : "pointer",
+  };
 }
 
 const inputStyle: React.CSSProperties = {
