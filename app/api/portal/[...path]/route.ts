@@ -108,9 +108,9 @@ async function proxyRequest(
     return res;
   }
 
-  // ── Logout: clear cookie ──────────────────────────────────────────────────
+  // ── Logout: clear cookie + redirect to login ─────────────────────────────
   if (apiPath === "auth/logout" && method === "POST") {
-    const res = NextResponse.json({ ok: true });
+    const res = NextResponse.redirect(new URL("/portal/login", req.url));
     res.cookies.set(COOKIE_NAME, "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
