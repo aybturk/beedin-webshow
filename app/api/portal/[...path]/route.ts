@@ -58,29 +58,17 @@ async function proxyRequest(
   const cookieStore = cookies();
   const sessionToken = cookieStore.get(COOKIE_NAME)?.value;
 
-  const headers: Record<string, string> = {};
-  // For JSON requests set Content-Type explicitly; for multipart use the original
-  // (with boundary) or let the fetch API set it automatically.
-  if (!contentTypeOverride) {
-    headers["Content-Type"] = "application/json";
-  } else if (contentTypeOverride) {
-    headers["Content-Type"] = contentTypeOverride;
-  }
-  if (sessionToken) {
-    headers["Authorization"] = `Bearer ${sessionToken}`;
-  }
-
-  // Forward body for mutating requests
+  // Forward body for mutating requests.
   // Multipart (file upload) is forwarded as raw bytes; JSON is re-serialised.
   let body: BodyInit | undefined;
   let contentTypeOverride: string | undefined;
   if (method !== "GET" && method !== "DELETE") {
     const ct = req.headers.get("content-type") ?? "";
     if (ct.startsWith("multipart/form-data")) {
-      // Forward the raw FormData so FastAPI's UploadFile parsing works correctly.
-      // We must NOT re-set Content-Type — the browser boundary string must be preserved.
+      // Forward the raw blob so FastAPI's UploadFile parsing works correctly.
+      // We MUST preserve the original Content-Type (it contains the boundary string).
       body = await req.blob();
-      contentTypeOverride = ct; // keep original with boundary
+      contentTypeOverride = ct;
     } else {
       try {
         body = JSON.stringify(await req.json());
@@ -88,6 +76,17 @@ async function proxyRequest(
         body = undefined;
       }
     }
+  }
+
+  // Build headers after body inspection so contentTypeOverride is available.
+  const headers: Record<string, string> = {};
+  if (contentTypeOverride) {
+    headers["Content-Type"] = contentTypeOverride;
+  } else {
+    headers["Content-Type"] = "application/json";
+  }
+  if (sessionToken) {
+    headers["Authorization"] = `Bearer ${sessionToken}`;
   }
 
   let backendRes: Response;
