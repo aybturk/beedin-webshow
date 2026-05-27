@@ -141,9 +141,10 @@ export default async function ProductPage({ params }: Props) {
             <DetailPrice product={product} currencyDisplay={currencyDisplay} />
 
             {product.description_en && (
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--color-muted)", lineHeight: 1.7, marginBottom: 32 }}>
-                {product.description_en}
-              </p>
+              <div
+                style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--color-muted)", lineHeight: 1.7, marginBottom: 32 }}
+                dangerouslySetInnerHTML={{ __html: product.description_en }}
+              />
             )}
 
             {/* CTA — always show inquiry button; label reflects purchasable state */}
