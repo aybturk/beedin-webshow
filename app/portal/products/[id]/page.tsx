@@ -37,7 +37,7 @@ type ImageAsset = {
   asset_id: string | null;      // null for legacy inline Trendyol images
   public_url: string;
   image_role: string;           // primary | gallery | generated | hero
-  source_type: string;          // trendyol | merchant_upload | ai_generated
+  source_type: string;          // trendyol_source | merchant_upload | ai_generated
   storage_provider: string;     // external_cdn | r2
   mime_type: string;
   sort_order: number;
