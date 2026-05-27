@@ -174,6 +174,62 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {/* Actions */}
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #e5e5e3",
+          borderRadius: 8,
+          padding: "24px",
+          marginBottom: 16,
+        }}
+      >
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 16 }}>
+          Manage
+        </h2>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <a
+            href="/portal/products"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 20px",
+              background: "#1a1a1a",
+              color: "#fff",
+              borderRadius: 4,
+              fontSize: 13,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textDecoration: "none",
+            }}
+          >
+            Product Catalog →
+          </a>
+          {demoUrl && (
+            <a
+              href={demoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 20px",
+                border: "1px solid #e5e5e3",
+                borderRadius: 4,
+                fontSize: 13,
+                fontWeight: 500,
+                color: "#555",
+                textDecoration: "none",
+              }}
+            >
+              View Storefront ↗
+            </a>
+          )}
+        </div>
+      </div>
+
       {/* Coming soon */}
       <div
         style={{
@@ -187,7 +243,6 @@ export default async function DashboardPage() {
           Coming next
         </h2>
         <ul style={{ fontSize: 13, color: "#666", lineHeight: 2, margin: 0, paddingLeft: 20 }}>
-          <li>Product catalog management (publish / archive)</li>
           <li>Price editing with Shopify sync</li>
           <li>Order tracking &amp; commission ledger</li>
           <li>Fulfillment &amp; shipping updates</li>
