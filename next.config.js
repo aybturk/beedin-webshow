@@ -14,6 +14,9 @@ const nextConfig = {
       { protocol: "https", hostname: "img.trendyol.com" },
       // Allow generated AI images served from the backend
       { protocol: "http", hostname: "localhost", port: "8000" },
+      // Railway backend (production)
+      { protocol: "https", hostname: "*.railway.app" },
+      { protocol: "https", hostname: "*.up.railway.app" },
     ],
     unoptimized: false,
   },
