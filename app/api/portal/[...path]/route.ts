@@ -102,7 +102,7 @@ async function proxyRequest(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api/portal",
+      path: "/",
       maxAge: COOKIE_MAX_AGE,
     });
     return res;
@@ -115,7 +115,7 @@ async function proxyRequest(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api/portal",
+      path: "/",
       maxAge: 0,
     });
     return res;

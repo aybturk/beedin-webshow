@@ -18,13 +18,13 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
 async function getMerchantData() {
+  // Read the httpOnly session cookie (Path=/ so it's sent with all requests)
   const cookieStore = cookies();
   const token = cookieStore.get("beedin_session")?.value;
 
   if (!token) return null;
 
-  // BFF proxy: /api/portal/auth/me → Railway /api/merchant/auth/me
-  // We're on the server, so we build the absolute URL from env.
+  // Call Railway backend directly with the JWT (server-to-server, no CORS issue)
   const backendUrl =
     process.env.BACKEND_URL ?? "https://beedin-sync-production.up.railway.app";
 
