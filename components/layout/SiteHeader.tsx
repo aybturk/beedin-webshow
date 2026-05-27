@@ -80,7 +80,6 @@ export default function SiteHeader({ storeSlug, siteConfig, branding }: Props) {
         {/* Desktop Nav */}
         <nav
           style={{
-            display: "flex",
             gap: 32,
             alignItems: "center",
           }}
