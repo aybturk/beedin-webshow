@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { getWebshowPackage, getProductById, getProductsByCategory } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
 import ProductCard from "@/components/product/ProductCard";
+import ImageGallery from "@/components/product/ImageGallery";
 import type { Product } from "@/lib/types";
 
 function DetailPrice({ product, currencyDisplay }: { product: Product; currencyDisplay: string }) {
@@ -58,8 +58,6 @@ export default async function ProductPage({ params }: Props) {
     .filter((p) => p.id !== product.id)
     .slice(0, 4);
 
-  const mainImage = product.images?.[0];
-
   return (
     <div>
       {/* Breadcrumb */}
@@ -81,30 +79,9 @@ export default async function ProductPage({ params }: Props) {
       <div className="section-container section-pad-v">
         <div className="product-detail-grid">
 
-          {/* Image */}
+          {/* Image gallery */}
           <div className="sticky-desktop">
-            <div
-              style={{
-                position: "relative",
-                paddingBottom: "100%",
-                background: "var(--color-secondary)",
-                overflow: "hidden",
-              }}
-            >
-              {mainImage ? (
-                <Image
-                  src={mainImage.url}
-                  alt={mainImage.alt || product.title_en}
-                  fill
-                  style={{ objectFit: "cover" }}
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  priority
-                  unoptimized
-                />
-              ) : (
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64, color: "var(--color-muted)" }}>📦</div>
-              )}
-            </div>
+            <ImageGallery images={product.images ?? []} title={product.title_en} />
           </div>
 
           {/* Info */}
