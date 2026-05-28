@@ -43,6 +43,12 @@ type ImageAsset = {
   sort_order: number;
   is_archived: boolean;
   created_at: string | null;
+  // AI generation metadata (populated for ai_generated assets)
+  parent_asset_id?: string | null;
+  generation_mode?: string;
+  generation_prompt?: string;
+  generation_provider?: string;
+  generation_model?: string;
 };
 
 type Tab = "content" | "images" | "pricing" | "studio";
