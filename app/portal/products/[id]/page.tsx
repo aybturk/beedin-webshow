@@ -45,7 +45,9 @@ type ImageAsset = {
   created_at: string | null;
 };
 
-type Tab = "content" | "images" | "pricing";
+type Tab = "content" | "images" | "pricing" | "studio";
+
+type StudioMode = "NORMAL" | "MODEL";
 
 const REVIEW_STATUS_LABEL: Record<string, string> = {
   NOT_REQUIRED: "Cleared",
@@ -97,6 +99,16 @@ export default function ProductWorkspacePage() {
   const [assetAction, setAssetAction] = useState<string | null>(null); // asset_id being actioned
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [r2Enabled, setR2Enabled] = useState(false);
+
+  // AI Studio tab state
+  const [studioSourceAssetId, setStudioSourceAssetId] = useState<string | null>(null);
+  const [studioMode, setStudioMode] = useState<StudioMode>("NORMAL");
+  const [studioPrompt, setStudioPrompt] = useState("");
+  const [studioPrompting, setStudioPrompting] = useState(false);
+  const [studioGenerating, setStudioGenerating] = useState(false);
+  const [studioStatus, setStudioStatus] = useState<{ msg: string; type: "info" | "ok" | "warn" | "error" } | null>(null);
+  const [studioResult, setStudioResult] = useState<ImageAsset | null>(null);
+  const [studioActioning, setStudioActioning] = useState<string | null>(null); // "primary" | "gallery" | "discard"
 
   const fetchProduct = useCallback(async () => {
     setLoading(true);
@@ -448,25 +460,30 @@ export default function ProductWorkspacePage() {
         {/* ── Right: tabbed editor ─────────────────────────────────────────── */}
         <div>
           {/* Tabs */}
-          <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e5e3", marginBottom: 24 }}>
-            {(["content", "images", "pricing"] as Tab[]).map((t) => (
+          <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e5e3", marginBottom: 24, flexWrap: "wrap" }}>
+            {(["content", "images", "pricing", "studio"] as Tab[]).map((t) => (
               <button
                 key={t}
-                onClick={() => setTab(t)}
+                onClick={() => {
+                  setTab(t);
+                  if (t === "images" || t === "studio") fetchImages();
+                }}
                 style={{
                   padding: "10px 20px",
                   border: "none",
                   background: "none",
                   fontSize: 13,
                   fontWeight: tab === t ? 600 : 400,
-                  color: tab === t ? "#1a1a1a" : "#888",
-                  borderBottom: tab === t ? "2px solid #1a1a1a" : "2px solid transparent",
+                  color: tab === t ? (t === "studio" ? "#7c3aed" : "#1a1a1a") : "#888",
+                  borderBottom: tab === t ? `2px solid ${t === "studio" ? "#7c3aed" : "#1a1a1a"}` : "2px solid transparent",
                   marginBottom: -2,
                   cursor: "pointer",
-                  textTransform: "capitalize",
                 }}
               >
-                {t === "content" ? "Content" : t === "images" ? "Images" : "Pricing & Visibility"}
+                {t === "content" ? "Content"
+                  : t === "images" ? "Images"
+                  : t === "pricing" ? "Pricing & Visibility"
+                  : "✨ AI Studio"}
               </button>
             ))}
           </div>
@@ -692,6 +709,37 @@ export default function ProductWorkspacePage() {
             </div>
           )}
 
+          {/* ── AI Studio tab ───────────────────────────────────────── */}
+          {tab === "studio" && (
+            <StudioTab
+              productId={productId}
+              images={images}
+              imagesLoading={imagesLoading}
+              sourceAssetId={studioSourceAssetId}
+              setSourceAssetId={setStudioSourceAssetId}
+              mode={studioMode}
+              setMode={setStudioMode}
+              prompt={studioPrompt}
+              setPrompt={setStudioPrompt}
+              prompting={studioPrompting}
+              setPrompting={setStudioPrompting}
+              generating={studioGenerating}
+              setGenerating={setStudioGenerating}
+              status={studioStatus}
+              setStatus={setStudioStatus}
+              result={studioResult}
+              setResult={setStudioResult}
+              actioning={studioActioning}
+              setActioning={setStudioActioning}
+              onApproved={() => {
+                setStudioResult(null);
+                setStudioStatus({ msg: "✓ Done — image added to your gallery.", type: "ok" });
+                fetchImages();
+                fetchProduct();
+              }}
+            />
+          )}
+
           {/* ── Pricing & Visibility tab ─────────────────────────────── */}
           {tab === "pricing" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -756,6 +804,376 @@ export default function ProductWorkspacePage() {
       </div>
     </div>
   );
+}
+
+// ── AI Studio Tab ─────────────────────────────────────────────────────────────
+
+function StudioTab({
+  productId,
+  images,
+  imagesLoading,
+  sourceAssetId,
+  setSourceAssetId,
+  mode,
+  setMode,
+  prompt,
+  setPrompt,
+  prompting,
+  setPrompting,
+  generating,
+  setGenerating,
+  status,
+  setStatus,
+  result,
+  setResult,
+  actioning,
+  setActioning,
+  onApproved,
+}: {
+  productId: string;
+  images: ImageAsset[];
+  imagesLoading: boolean;
+  sourceAssetId: string | null;
+  setSourceAssetId: (id: string | null) => void;
+  mode: StudioMode;
+  setMode: (m: StudioMode) => void;
+  prompt: string;
+  setPrompt: (p: string) => void;
+  prompting: boolean;
+  setPrompting: (v: boolean) => void;
+  generating: boolean;
+  setGenerating: (v: boolean) => void;
+  status: { msg: string; type: "info" | "ok" | "warn" | "error" } | null;
+  setStatus: (s: { msg: string; type: "info" | "ok" | "warn" | "error" } | null) => void;
+  result: ImageAsset | null;
+  setResult: (a: ImageAsset | null) => void;
+  actioning: string | null;
+  setActioning: (s: string | null) => void;
+  onApproved: () => void;
+}) {
+  // Only non-archived, non-generated assets as source candidates
+  const sourceOptions = images.filter(
+    (img) => img.asset_id && !img.is_archived && img.image_role !== "generated"
+  );
+
+  const statusColors: Record<string, { bg: string; color: string }> = {
+    info:  { bg: "#eff6ff", color: "#1d4ed8" },
+    ok:    { bg: "#f0fdf4", color: "#15803d" },
+    warn:  { bg: "#fffbeb", color: "#92400e" },
+    error: { bg: "#fef2f2", color: "#dc2626" },
+  };
+
+  async function handleAutoPrompt() {
+    if (!sourceAssetId) {
+      setStatus({ msg: "Select a source image first.", type: "warn" });
+      return;
+    }
+    setPrompting(true);
+    setStatus({ msg: "Analyzing image with Gemini Vision…", type: "info" });
+    try {
+      const res = await fetch(`/api/portal/products/${productId}/studio/auto-prompt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source_asset_id: sourceAssetId, mode }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatus({ msg: data.detail ?? "Auto-prompt failed.", type: "error" });
+        return;
+      }
+      setPrompt(data.prompt ?? "");
+      setStatus({ msg: "✓ Prompt ready — review and click Generate.", type: "ok" });
+    } catch {
+      setStatus({ msg: "Network error.", type: "error" });
+    } finally {
+      setPrompting(false);
+    }
+  }
+
+  async function handleGenerate() {
+    if (!sourceAssetId) {
+      setStatus({ msg: "Select a source image first.", type: "warn" });
+      return;
+    }
+    if (!prompt.trim()) {
+      setStatus({ msg: "Write or auto-create a prompt first.", type: "warn" });
+      return;
+    }
+    setGenerating(true);
+    setResult(null);
+    setStatus({ msg: "Generating image… this takes 15-30 seconds.", type: "info" });
+    try {
+      const res = await fetch(`/api/portal/products/${productId}/studio/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source_asset_id: sourceAssetId, mode, prompt }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatus({ msg: data.detail ?? "Generation failed.", type: "error" });
+        return;
+      }
+      setResult(data as ImageAsset);
+      setStatus({ msg: "✓ Image generated! Choose what to do with it.", type: "ok" });
+    } catch {
+      setStatus({ msg: "Network error during generation.", type: "error" });
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleAction(action: "set_primary" | "promote_to_gallery" | "archive") {
+    if (!result?.asset_id) return;
+    setActioning(action);
+    try {
+      const res = await fetch(
+        `/api/portal/products/${productId}/images/${result.asset_id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setStatus({ msg: data.detail ?? `Action "${action}" failed.`, type: "error" });
+        return;
+      }
+      onApproved();
+    } catch {
+      setStatus({ msg: "Network error.", type: "error" });
+    } finally {
+      setActioning(null);
+    }
+  }
+
+  const modeBtn = (m: StudioMode, label: string) => (
+    <button
+      onClick={() => setMode(m)}
+      style={{
+        flex: 1,
+        padding: "9px 0",
+        border: `2px solid ${mode === m ? "#7c3aed" : "#e5e5e3"}`,
+        borderRadius: 6,
+        background: mode === m ? "#7c3aed" : "transparent",
+        color: mode === m ? "#fff" : "#888",
+        fontSize: 12,
+        fontWeight: 600,
+        cursor: "pointer",
+        transition: "all 0.15s",
+      }}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* Intro */}
+      <p style={{ fontSize: 13, color: "#555", margin: 0 }}>
+        Generate a new product image using AI. The result is saved privately —
+        it only appears on your storefront when you promote it.
+      </p>
+
+      {/* Step 1 — source image */}
+      <div>
+        <p style={{ fontSize: 12, fontWeight: 600, color: "#1a1a1a", marginBottom: 8 }}>
+          1. Select source image
+        </p>
+        {imagesLoading ? (
+          <p style={{ fontSize: 13, color: "#aaa" }}>Loading images…</p>
+        ) : sourceOptions.length === 0 ? (
+          <p style={{ fontSize: 13, color: "#aaa" }}>
+            No images available. Upload an image in the Images tab first.
+          </p>
+        ) : (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {sourceOptions.map((img) => (
+              <div
+                key={img.asset_id}
+                onClick={() => setSourceAssetId(img.asset_id)}
+                style={{
+                  width: 64, height: 64, borderRadius: 6, overflow: "hidden", cursor: "pointer",
+                  border: sourceAssetId === img.asset_id
+                    ? "3px solid #7c3aed"
+                    : "3px solid transparent",
+                  outline: sourceAssetId === img.asset_id ? "2px solid #c4b5fd" : "none",
+                  flexShrink: 0,
+                  transition: "border-color 0.1s",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img.public_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Step 2 — mode */}
+      <div>
+        <p style={{ fontSize: 12, fontWeight: 600, color: "#1a1a1a", marginBottom: 8 }}>
+          2. Choose mode
+        </p>
+        <div style={{ display: "flex", gap: 8 }}>
+          {modeBtn("NORMAL", "📦 Product shot")}
+          {modeBtn("MODEL", "👗 On model")}
+        </div>
+        <p style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>
+          {mode === "NORMAL"
+            ? "Studio product shot — clean background, product centered."
+            : "Fashion editorial — product worn/held by a model."}
+        </p>
+      </div>
+
+      {/* Step 3 — prompt */}
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: "#1a1a1a", margin: 0 }}>
+            3. Prompt
+          </p>
+          <button
+            onClick={handleAutoPrompt}
+            disabled={prompting || !sourceAssetId}
+            style={{
+              fontSize: 11, padding: "5px 12px",
+              border: "1px solid #c4b5fd", borderRadius: 4,
+              background: prompting ? "#f5f3ff" : "#faf5ff",
+              color: "#7c3aed", cursor: prompting || !sourceAssetId ? "not-allowed" : "pointer",
+              fontWeight: 500,
+            }}
+          >
+            {prompting ? "Analyzing…" : "✦ Auto-create prompt"}
+          </button>
+        </div>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          rows={4}
+          placeholder="Describe the ideal image… or click Auto-create prompt above."
+          style={{
+            width: "100%", padding: "9px 12px",
+            border: "1px solid #d5d5d3", borderRadius: 4,
+            fontSize: 13, color: "#1a1a1a", background: "#fff",
+            resize: "vertical", lineHeight: 1.5,
+            boxSizing: "border-box", fontFamily: "inherit",
+            outline: "none",
+          }}
+        />
+      </div>
+
+      {/* Generate button */}
+      <div>
+        <button
+          onClick={handleGenerate}
+          disabled={generating || !sourceAssetId || !prompt.trim()}
+          style={{
+            padding: "10px 28px",
+            background: generating || !sourceAssetId || !prompt.trim() ? "#e5e5e3" : "#7c3aed",
+            color: generating || !sourceAssetId || !prompt.trim() ? "#999" : "#fff",
+            border: "none", borderRadius: 4,
+            fontSize: 13, fontWeight: 600,
+            cursor: generating || !sourceAssetId || !prompt.trim() ? "not-allowed" : "pointer",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {generating ? "Generating… (up to 30s)" : "✨ Generate image"}
+        </button>
+      </div>
+
+      {/* Status bar */}
+      {status && (
+        <div style={{
+          padding: "10px 14px",
+          background: statusColors[status.type]?.bg ?? "#f9f9f7",
+          color: statusColors[status.type]?.color ?? "#555",
+          border: `1px solid ${statusColors[status.type]?.color ?? "#e5e5e3"}30`,
+          borderRadius: 6,
+          fontSize: 13,
+        }}>
+          {status.msg}
+        </div>
+      )}
+
+      {/* Result + inline approval */}
+      {result && (
+        <div style={{ border: "2px solid #7c3aed", borderRadius: 8, overflow: "hidden" }}>
+          <div style={{ position: "relative", background: "#f3f4f6" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={result.public_url}
+              alt="AI generated result"
+              style={{ width: "100%", maxHeight: 340, objectFit: "contain", display: "block" }}
+            />
+            <div style={{
+              position: "absolute", top: 8, left: 8,
+              background: "#7c3aed", color: "#fff",
+              fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 10,
+            }}>
+              AI · {result.generation_mode}
+            </div>
+          </div>
+
+          <div style={{ padding: 16, background: "#faf5ff", borderTop: "1px solid #ede9fe" }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: "#1a1a1a", marginBottom: 10 }}>
+              Add to your store
+            </p>
+            <p style={{ fontSize: 11, color: "#888", marginBottom: 12 }}>
+              The image is saved privately. Choose where to publish it — or discard.
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button
+                onClick={() => handleAction("set_primary")}
+                disabled={!!actioning}
+                style={resultActionStyle("#1a1a1a", "#fff", !!actioning)}
+              >
+                {actioning === "set_primary" ? "…" : "⭐ Set as primary"}
+              </button>
+              <button
+                onClick={() => handleAction("promote_to_gallery")}
+                disabled={!!actioning}
+                style={resultActionStyle("#7c3aed", "#faf5ff", !!actioning)}
+              >
+                {actioning === "promote_to_gallery" ? "…" : "📋 Add to gallery"}
+              </button>
+              <button
+                onClick={() => handleAction("archive")}
+                disabled={!!actioning}
+                style={resultActionStyle("#dc2626", "#fef2f2", !!actioning)}
+              >
+                {actioning === "archive" ? "…" : "🗑 Discard"}
+              </button>
+            </div>
+          </div>
+
+          {result.generation_prompt && (
+            <div style={{ padding: "8px 16px", background: "#f9f9f7", borderTop: "1px solid #f3f4f6" }}>
+              <p style={{ fontSize: 10, color: "#aaa", margin: 0 }}>
+                Prompt: {result.generation_prompt.slice(0, 160)}
+                {result.generation_prompt.length > 160 ? "…" : ""}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+function resultActionStyle(color: string, bg: string, disabled: boolean): React.CSSProperties {
+  return {
+    padding: "8px 16px",
+    border: `1px solid ${disabled ? "#e5e5e3" : color}`,
+    borderRadius: 4,
+    background: disabled ? "#f9f9f7" : bg,
+    color: disabled ? "#ccc" : color,
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: disabled ? "not-allowed" : "pointer",
+    letterSpacing: "0.02em",
+  };
 }
 
 // ── Small helpers ──────────────────────────────────────────────────────────────
